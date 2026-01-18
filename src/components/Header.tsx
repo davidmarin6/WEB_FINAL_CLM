@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 import { Menu, X } from "lucide-react";
+import { useChat } from "@/contexts/ChatContext";
 
 const navItems = [
   { label: "Inicio", href: "#" },
@@ -13,6 +14,7 @@ const navItems = [
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { openChat } = useChat();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +23,11 @@ export const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleComenzarClick = () => {
+    setIsMobileMenuOpen(false);
+    openChat();
+  };
 
   return (
     <motion.header
@@ -36,12 +43,12 @@ export const Header = () => {
       <div className="container px-4 md:px-6">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <a href="#" className="relative z-50">
+          <a href="#" className="relative z-50 flex items-center">
             <img
               src={logoHorizontal}
               alt="viajaCLM"
-              className={`transition-all duration-300 ${
-                isScrolled ? "h-10" : "h-12"
+              className={`transition-all duration-300 object-contain max-w-[160px] md:max-w-[180px] ${
+                isScrolled ? "h-9 md:h-10" : "h-10 md:h-12"
               }`}
             />
           </a>
@@ -59,7 +66,10 @@ export const Header = () => {
                 {item.label}
               </a>
             ))}
-            <button className="btn-hero px-6 py-2.5 text-sm">
+            <button 
+              onClick={handleComenzarClick}
+              className="btn-hero px-6 py-2.5 text-sm"
+            >
               Comenzar
             </button>
           </nav>
@@ -107,6 +117,7 @@ export const Header = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
+                onClick={handleComenzarClick}
               >
                 Comenzar
               </motion.button>

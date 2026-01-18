@@ -6,8 +6,12 @@ import { GallerySection } from "@/components/GallerySection";
 import { CTASection } from "@/components/CTASection";
 import { Footer } from "@/components/Footer";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
+import { ChatModal } from "@/components/ChatModal";
+import { ChatProvider, useChat } from "@/contexts/ChatContext";
 
-const Index = () => {
+const IndexContent = () => {
+  const { isOpen, closeChat } = useChat();
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Header />
@@ -32,7 +36,16 @@ const Index = () => {
 
       <Footer />
       <FloatingChatButton />
+      <ChatModal isOpen={isOpen} onClose={closeChat} />
     </div>
+  );
+};
+
+const Index = () => {
+  return (
+    <ChatProvider>
+      <IndexContent />
+    </ChatProvider>
   );
 };
 
