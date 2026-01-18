@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Sparkles, MapPin, Home, Star } from "lucide-react";
+import { X, Send, Sparkles, MapPin, Home, Star, ArrowLeft } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
+import logoHorizontal from "@/assets/logo-horizontal.png";
 import casaRural1 from "@/assets/casa-rural-1.jpg";
 import casaRural2 from "@/assets/casa-rural-2.jpg";
+import heroLandscape from "@/assets/hero-landscape.jpg";
 
 interface Message {
   id: number;
@@ -52,14 +54,12 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
     setIsTyping(true);
     
     setTimeout(() => {
-      const responses: Message[] = [];
-      
       if (userMessage.toLowerCase().includes("piscina") || userMessage.toLowerCase().includes("verano")) {
-        responses.push({
+        setMessages(prev => [...prev, {
           id: Date.now(),
           type: "bot",
           content: "¡Excelente elección! 🏊‍♂️ He encontrado varias casas rurales con piscina privada. Aquí tienes una de las más valoradas:",
-        });
+        }]);
         setTimeout(() => {
           setMessages(prev => [...prev, {
             id: Date.now() + 1,
@@ -71,11 +71,11 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
           setIsTyping(false);
         }, 1200);
       } else if (userMessage.toLowerCase().includes("romántic") || userMessage.toLowerCase().includes("pareja")) {
-        responses.push({
+        setMessages(prev => [...prev, {
           id: Date.now(),
           type: "bot",
           content: "💕 ¡Una escapada romántica! Tengo opciones perfectas para parejas con encanto y privacidad:",
-        });
+        }]);
         setTimeout(() => {
           setMessages(prev => [...prev, {
             id: Date.now() + 1,
@@ -87,20 +87,13 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
           setIsTyping(false);
         }, 1200);
       } else {
-        responses.push({
+        setMessages(prev => [...prev, {
           id: Date.now(),
           type: "bot",
           content: "Entendido 👍 Para darte las mejores recomendaciones, cuéntame un poco más:",
           suggestions: ["¿Cuántas personas sois?", "¿Qué provincia prefieres?", "¿Fechas de tu viaje?", "¿Presupuesto aproximado?"]
-        });
-        setMessages(prev => [...prev, ...responses]);
+        }]);
         setIsTyping(false);
-      }
-      
-      if (responses.length > 0 && !responses[0].content.includes("Excelente") && !responses[0].content.includes("romántica")) {
-        // Already handled above
-      } else if (responses.length > 0) {
-        setMessages(prev => [...prev, responses[0]]);
       }
     }, 1500);
   };
@@ -140,92 +133,98 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          
-          {/* Modal */}
-          <motion.div
-            className="fixed inset-4 md:inset-auto md:right-6 md:bottom-6 md:w-[440px] md:h-[600px] z-50 flex flex-col bg-background rounded-2xl shadow-2xl overflow-hidden border border-border"
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        <motion.div
+          className="fixed inset-0 z-50 flex flex-col bg-background"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <img src={heroLandscape} alt="" className="w-full h-full object-cover" />
+          </div>
+
+          {/* Header */}
+          <motion.header 
+            className="relative flex items-center justify-between px-4 md:px-8 py-4 bg-gradient-to-r from-primary to-accent"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary to-accent border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <img src={logoIcon} alt="viajaCLM" className="w-10 h-10 rounded-xl" />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-primary-foreground">viajaCLM Asistente</h3>
-                  <p className="text-xs text-primary-foreground/70 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    Siempre disponible
-                  </p>
-                </div>
-              </div>
+            <div className="flex items-center gap-4">
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-primary-foreground/10 rounded-lg transition-colors"
+                className="p-2 hover:bg-primary-foreground/10 rounded-xl transition-colors mr-2"
               >
-                <X className="w-5 h-5 text-primary-foreground" />
+                <ArrowLeft className="w-6 h-6 text-primary-foreground" />
               </button>
+              <div className="relative">
+                <img src={logoIcon} alt="viajaCLM" className="w-12 h-12 rounded-xl" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-primary" />
+              </div>
+              <div>
+                <h1 className="text-lg md:text-xl font-bold text-primary-foreground">viajaCLM Asistente</h1>
+                <p className="text-xs md:text-sm text-primary-foreground/80 flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
+                  Tu guía turístico inteligente
+                </p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="p-3 hover:bg-primary-foreground/10 rounded-xl transition-colors hidden md:flex"
+            >
+              <X className="w-6 h-6 text-primary-foreground" />
+            </button>
+          </motion.header>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/30">
+          {/* Messages Container */}
+          <div className="flex-1 overflow-y-auto relative">
+            <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
               {messages.map((message) => (
                 <motion.div
                   key={message.id}
                   className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <div className={`max-w-[85%] ${message.type === "user" ? "order-2" : "order-1"}`}>
+                  <div className={`max-w-[85%] md:max-w-[70%] ${message.type === "user" ? "order-2" : "order-1"}`}>
                     {message.type === "bot" && (
-                      <div className="flex items-center gap-2 mb-1">
-                        <img src={logoIcon} alt="" className="w-6 h-6 rounded-lg" />
-                        <span className="text-xs text-muted-foreground">viajaCLM</span>
+                      <div className="flex items-center gap-2 mb-2">
+                        <img src={logoIcon} alt="" className="w-8 h-8 rounded-lg" />
+                        <span className="text-sm font-medium text-muted-foreground">viajaCLM</span>
                       </div>
                     )}
                     
                     <div
-                      className={`rounded-2xl px-4 py-3 ${
+                      className={`rounded-2xl px-5 py-4 ${
                         message.type === "user"
                           ? "bg-primary text-primary-foreground rounded-br-md"
-                          : "bg-card border border-border rounded-bl-md shadow-sm"
+                          : "bg-card border border-border rounded-bl-md shadow-md"
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-line">{message.content}</p>
+                      <p className="text-base leading-relaxed whitespace-pre-line">{message.content}</p>
                       
                       {message.image && (
-                        <div className="mt-3 rounded-xl overflow-hidden">
+                        <div className="mt-4 rounded-xl overflow-hidden">
                           <img 
                             src={message.image} 
                             alt="Alojamiento rural" 
-                            className="w-full h-32 object-cover hover:scale-105 transition-transform cursor-pointer"
+                            className="w-full h-48 md:h-56 object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
                           />
                         </div>
                       )}
                     </div>
                     
                     {message.suggestions && (
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <div className="flex flex-wrap gap-2 mt-3">
                         {message.suggestions.map((suggestion, idx) => (
                           <button
                             key={idx}
                             onClick={() => handleSuggestionClick(suggestion)}
-                            className="text-xs px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-full transition-colors border border-primary/20"
+                            className="text-sm px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full transition-all hover:scale-105 border border-primary/20"
                           >
                             {suggestion}
                           </button>
@@ -242,23 +241,26 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-                    <div className="flex gap-1">
-                      <motion.span
-                        className="w-2 h-2 bg-muted-foreground rounded-full"
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                      />
-                      <motion.span
-                        className="w-2 h-2 bg-muted-foreground rounded-full"
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                      />
-                      <motion.span
-                        className="w-2 h-2 bg-muted-foreground rounded-full"
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                      />
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src={logoIcon} alt="" className="w-8 h-8 rounded-lg" />
+                    <div className="bg-card border border-border rounded-2xl rounded-bl-md px-5 py-4 shadow-md">
+                      <div className="flex gap-1.5">
+                        <motion.span
+                          className="w-2.5 h-2.5 bg-muted-foreground rounded-full"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                        />
+                        <motion.span
+                          className="w-2.5 h-2.5 bg-muted-foreground rounded-full"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                        />
+                        <motion.span
+                          className="w-2.5 h-2.5 bg-muted-foreground rounded-full"
+                          animate={{ y: [0, -6, 0] }}
+                          transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -266,50 +268,59 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
               
               <div ref={messagesEndRef} />
             </div>
+          </div>
 
-            {/* Quick Actions */}
-            <div className="px-4 py-2 border-t border-border bg-background">
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {/* Quick Actions */}
+          <div className="relative border-t border-border bg-background/80 backdrop-blur-sm">
+            <div className="max-w-3xl mx-auto px-4 py-3">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 {[
-                  { icon: MapPin, label: "Ubicación" },
-                  { icon: Home, label: "Tipo de casa" },
-                  { icon: Star, label: "Mejor valorado" },
+                  { icon: MapPin, label: "Ver mapa" },
+                  { icon: Home, label: "Tipos de casa" },
+                  { icon: Star, label: "Mejor valorados" },
                 ].map((action, idx) => (
                   <button
                     key={idx}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs text-muted-foreground whitespace-nowrap transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 rounded-full text-sm text-muted-foreground whitespace-nowrap transition-all hover:scale-105"
                     onClick={() => handleSuggestionClick(action.label)}
                   >
-                    <action.icon className="w-3.5 h-3.5" />
+                    <action.icon className="w-4 h-4" />
                     {action.label}
                   </button>
                 ))}
               </div>
             </div>
+          </div>
 
-            {/* Input */}
-            <div className="p-4 border-t border-border bg-background">
-              <div className="flex gap-2">
+          {/* Input */}
+          <motion.div 
+            className="relative border-t border-border bg-background px-4 py-4 md:py-6"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="max-w-3xl mx-auto">
+              <div className="flex gap-3">
                 <input
                   ref={inputRef}
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Escribe tu mensaje..."
-                  className="flex-1 px-4 py-3 bg-muted rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground"
+                  placeholder="Escribe lo que buscas... (ej: casa rural con piscina en Toledo)"
+                  className="flex-1 px-5 py-4 bg-muted rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground"
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim()}
-                  className="p-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all hover:scale-105 active:scale-95"
+                  className="px-6 py-4 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl transition-all hover:scale-105 active:scale-95"
                 >
-                  <Send className="w-5 h-5 text-primary-foreground" />
+                  <Send className="w-6 h-6 text-primary-foreground" />
                 </button>
               </div>
             </div>
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
