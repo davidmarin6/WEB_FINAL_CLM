@@ -1,12 +1,14 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import heroLandscape from "@/assets/hero-landscape.jpg";
+import { useChat } from "@/contexts/ChatContext";
 
 export const CTASection = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [count, setCount] = useState(0);
   const targetCount = 1247;
+  const { openChat } = useChat();
 
   useEffect(() => {
     if (isInView) {
@@ -106,7 +108,7 @@ export const CTASection = () => {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            <button className="btn-hero text-xl px-12 py-5 pulse-glow">
+            <button onClick={openChat} className="btn-hero text-xl px-12 py-5 pulse-glow">
               <span>Comenzar ahora</span>
               <motion.span
                 className="ml-3 inline-block"

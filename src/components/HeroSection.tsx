@@ -2,8 +2,11 @@ import { motion } from "framer-motion";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 import heroLandscape from "@/assets/hero-landscape.jpg";
 import { ChatMockup } from "./ChatMockup";
+import { useChat } from "@/contexts/ChatContext";
 
 export const HeroSection = () => {
+  const { openChat } = useChat();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -13,8 +16,8 @@ export const HeroSection = () => {
           alt="Paisaje de Castilla-La Mancha con molinos de viento"
           className="w-full h-full object-cover animate-ken-burns"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/40 to-background" />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-foreground/50 via-foreground/30 to-background/90" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10" />
       </div>
 
       {/* Floating Decorative Elements */}
@@ -39,15 +42,19 @@ export const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            {/* Logo */}
-            <motion.img
-              src={logoHorizontal}
-              alt="viajaCLM"
-              className="h-16 md:h-20 mx-auto lg:mx-0"
+            {/* Logo - Hidden on hero since it's in header */}
+            <motion.div
+              className="hidden"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-            />
+            >
+              <img
+                src={logoHorizontal}
+                alt="viajaCLM"
+                className="h-16 md:h-20 mx-auto lg:mx-0"
+              />
+            </motion.div>
 
             {/* Headline */}
             <motion.h1
@@ -79,7 +86,7 @@ export const HeroSection = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
             >
-              <button className="btn-hero group">
+              <button onClick={openChat} className="btn-hero group">
                 <span>Comenzar mi aventura</span>
                 <motion.span
                   className="ml-2 inline-block"
@@ -89,9 +96,12 @@ export const HeroSection = () => {
                   →
                 </motion.span>
               </button>
-              <button className="btn-secondary backdrop-blur-md bg-primary-foreground/20 text-primary-foreground border border-primary-foreground/30">
+              <a 
+                href="#how-it-works"
+                className="btn-secondary backdrop-blur-md bg-primary-foreground/20 text-primary-foreground border border-primary-foreground/30 text-center"
+              >
                 Ver cómo funciona
-              </button>
+              </a>
             </motion.div>
 
             {/* Stats */}

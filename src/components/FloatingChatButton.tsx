@@ -1,10 +1,13 @@
 import { motion } from "framer-motion";
-import { MessageCircle } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
+import { useChat } from "@/contexts/ChatContext";
 
 export const FloatingChatButton = () => {
+  const { openChat } = useChat();
+
   return (
     <motion.button
+      onClick={openChat}
       className="fixed bottom-6 right-6 z-50 group"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
