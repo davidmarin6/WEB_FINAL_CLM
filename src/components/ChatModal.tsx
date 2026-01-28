@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Sparkles, MapPin, Home, Star, ArrowLeft } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import logoIcon from "@/assets/logo-icon.png";
 import logoHorizontal from "@/assets/logo-horizontal.png";
 import casaRural1 from "@/assets/casa-rural-1.jpg";
@@ -223,7 +224,24 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
                           : "bg-card border border-border rounded-bl-md shadow-md"
                       }`}
                     >
-                      <p className="text-base leading-relaxed whitespace-pre-line">{message.content}</p>
+                      <div className="text-base leading-relaxed prose prose-sm max-w-none prose-a:text-primary prose-a:underline prose-a:font-medium hover:prose-a:text-primary/80">
+                        <ReactMarkdown
+                          components={{
+                            a: ({ href, children }) => (
+                              <a 
+                                href={href} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary underline font-medium hover:text-primary/80 transition-colors"
+                              >
+                                {children}
+                              </a>
+                            ),
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
                       
                       {message.image && (
                         <div className="mt-4 rounded-xl overflow-hidden">
