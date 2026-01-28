@@ -72,15 +72,30 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
         throw new Error(`Error: ${response.status}`);
       }
 
-      const data = await response.json();
+      // Get the response as text first
+      const responseText = await response.text();
       
-      // Handle the response from n8n
+      let content = "";
+      let image: string | undefined;
+      let suggestions: string[] | undefined;
+      
+      // Try to parse as JSON, otherwise use as plain text
+      try {
+        const data = JSON.parse(responseText);
+        content = data.message || data.response || data.text || data.output || responseText;
+        image = data.image;
+        suggestions = data.suggestions;
+      } catch {
+        // Response is plain text, use it directly
+        content = responseText;
+      }
+      
       const botMessage: Message = {
         id: Date.now(),
         type: "bot",
-        content: data.message || data.response || data.text || JSON.stringify(data),
-        image: data.image,
-        suggestions: data.suggestions,
+        content,
+        image,
+        suggestions,
       };
       
       setMessages(prev => [...prev, botMessage]);
