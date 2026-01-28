@@ -50,52 +50,55 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
     }
   }, [isOpen]);
 
-  const simulateBotResponse = (userMessage: string) => {
+  const sendMessageToN8N = async (userMessage: string) => {
     setIsTyping(true);
     
-    setTimeout(() => {
-      if (userMessage.toLowerCase().includes("piscina") || userMessage.toLowerCase().includes("verano")) {
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          type: "bot",
-          content: "¡Excelente elección! 🏊‍♂️ He encontrado varias casas rurales con piscina privada. Aquí tienes una de las más valoradas:",
-        }]);
-        setTimeout(() => {
-          setMessages(prev => [...prev, {
-            id: Date.now() + 1,
-            type: "bot",
-            content: "**Casa Rural El Molino** - Toledo\n⭐ 4.9 (127 reseñas) • Desde 120€/noche\n\nPiscina privada, jardín amplio, 6 personas. A 15 min del casco histórico de Toledo.",
-            image: casaRural1,
-            suggestions: ["Ver más opciones", "Reservar ahora", "Otra ubicación"]
-          }]);
-          setIsTyping(false);
-        }, 1200);
-      } else if (userMessage.toLowerCase().includes("romántic") || userMessage.toLowerCase().includes("pareja")) {
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          type: "bot",
-          content: "💕 ¡Una escapada romántica! Tengo opciones perfectas para parejas con encanto y privacidad:",
-        }]);
-        setTimeout(() => {
-          setMessages(prev => [...prev, {
-            id: Date.now() + 1,
-            type: "bot",
-            content: "**La Casita del Viñedo** - Cuenca\n⭐ 5.0 (89 reseñas) • Desde 95€/noche\n\nCasa con encanto entre viñedos, chimenea, jacuzzi privado y vistas espectaculares a la serranía.",
-            image: casaRural2,
-            suggestions: ["Ver disponibilidad", "Más opciones románticas", "Añadir experiencias"]
-          }]);
-          setIsTyping(false);
-        }, 1200);
-      } else {
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          type: "bot",
-          content: "Entendido 👍 Para darte las mejores recomendaciones, cuéntame un poco más:",
-          suggestions: ["¿Cuántas personas sois?", "¿Qué provincia prefieres?", "¿Fechas de tu viaje?", "¿Presupuesto aproximado?"]
-        }]);
-        setIsTyping(false);
+    try {
+      const response = await fetch(
+        "https://n8nproject-n8n.78uzpw.easypanel.host/webhook-test/0ae4a30d-71bc-4812-bda1-59efdcb21032",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            timestamp: new Date().toISOString(),
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
       }
-    }, 1500);
+
+      const data = await response.json();
+      
+      // Handle the response from n8n
+      const botMessage: Message = {
+        id: Date.now(),
+        type: "bot",
+        content: data.message || data.response || data.text || JSON.stringify(data),
+        image: data.image,
+        suggestions: data.suggestions,
+      };
+      
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Error connecting to n8n:", error);
+      
+      // Show error message to user
+      const errorMessage: Message = {
+        id: Date.now(),
+        type: "bot",
+        content: "Lo siento, ha ocurrido un error al conectar con el asistente. Por favor, inténtalo de nuevo.",
+        suggestions: ["Reintentar", "Ver opciones populares"],
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleSendMessage = () => {
@@ -109,7 +112,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
     
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
-    simulateBotResponse(inputValue);
+    sendMessageToN8N(inputValue);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -120,7 +123,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
     };
     
     setMessages(prev => [...prev, userMessage]);
-    simulateBotResponse(suggestion);
+    sendMessageToN8N(suggestion);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
