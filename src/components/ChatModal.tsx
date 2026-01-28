@@ -160,7 +160,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
           transition={{ duration: 0.3 }}
         >
           {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 opacity-5 pointer-events-none">
             <img src={heroLandscape} alt="" className="w-full h-full object-cover" />
           </div>
 
@@ -228,11 +228,21 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
                         <ReactMarkdown
                           components={{
                             a: ({ href, children }) => (
-                              <a 
-                                href={href} 
-                                target="_blank" 
+                              <a
+                                href={href}
+                                target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary underline font-medium hover:text-primary/80 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!href) return;
+                                  const opened = window.open(
+                                    href,
+                                    "_blank",
+                                    "noopener,noreferrer"
+                                  );
+                                  if (!opened) window.location.href = href;
+                                }}
+                                className="text-primary underline font-medium hover:text-primary/80 transition-colors pointer-events-auto"
                               >
                                 {children}
                               </a>
