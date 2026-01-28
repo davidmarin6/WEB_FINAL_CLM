@@ -55,7 +55,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
     
     try {
       const response = await fetch(
-        "https://n8nproject-n8n.78uzpw.easypanel.host/webhook-test/0ae4a30d-71bc-4812-bda1-59efdcb21032",
+        "https://n8nproject-n8n.78uzpw.easypanel.host/webhook/0ae4a30d-71bc-4812-bda1-59efdcb21032",
         {
           method: "POST",
           headers: {
