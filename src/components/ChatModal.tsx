@@ -235,16 +235,14 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
                                   if (!href) return;
-                                  const opened = window.open(
-                                    href,
-                                    "_blank",
-                                    "noopener,noreferrer"
-                                  );
-                                  if (!opened) window.location.href = href;
+                                  // Use top-level window to escape iframe context
+                                  const topWindow = window.top || window.parent || window;
+                                  topWindow.open(href, "_blank", "noopener,noreferrer");
                                 }}
-                                className="text-primary underline font-medium hover:text-primary/80 transition-colors pointer-events-auto"
+                                className="text-primary underline font-medium hover:text-primary/80 transition-colors pointer-events-auto cursor-pointer"
                               >
                                 {children}
                               </a>
