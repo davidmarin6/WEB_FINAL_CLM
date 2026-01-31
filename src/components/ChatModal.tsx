@@ -34,6 +34,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId] = useState(() => crypto.randomUUID());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -64,6 +65,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
           },
           body: JSON.stringify({
             message: userMessage,
+            sessionId: sessionId,
             timestamp: new Date().toISOString(),
           }),
         }
