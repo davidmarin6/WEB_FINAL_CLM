@@ -1,12 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Sparkles, MapPin, Home, Star, ArrowLeft } from "lucide-react";
+import { X, Send, Sparkles, MapPin, Home, Star, ArrowLeft, ExternalLink } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import logoIcon from "@/assets/logo-icon.png";
-import logoHorizontal from "@/assets/logo-horizontal.png";
-import casaRural1 from "@/assets/casa-rural-1.jpg";
-import casaRural2 from "@/assets/casa-rural-2.jpg";
 import heroLandscape from "@/assets/hero-landscape.jpg";
+import { fetchPlacePhoto, isGoogleMapsUrl } from "@/lib/api/googlePlaces";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface PlacePhoto {
+  url: string;
+  photoUrl?: string;
+  placeName?: string;
+  loading: boolean;
+}
 
 interface Message {
   id: number;
@@ -14,6 +20,7 @@ interface Message {
   content: string;
   image?: string;
   suggestions?: string[];
+  placePhotos?: PlacePhoto[];
 }
 
 interface ChatModalProps {
@@ -93,15 +100,52 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
         content = responseText;
       }
       
+      // Extract Google Maps URLs and prepare for photo fetching
+      const mapsUrlRegex = /https?:\/\/(?:www\.)?(?:google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|goo\.gl\/maps)[^\s)>\]]+/gi;
+      const mapsUrls = content.match(mapsUrlRegex) || [];
+      
+      const placePhotos: PlacePhoto[] = mapsUrls.map(url => ({
+        url,
+        loading: true,
+      }));
+      
       const botMessage: Message = {
         id: Date.now(),
         type: "bot",
         content,
         image,
         suggestions,
+        placePhotos: placePhotos.length > 0 ? placePhotos : undefined,
       };
       
       setMessages(prev => [...prev, botMessage]);
+      
+      // Fetch photos for each Google Maps URL
+      if (placePhotos.length > 0) {
+        const messageId = botMessage.id;
+        
+        for (const placePhoto of placePhotos) {
+          fetchPlacePhoto(placePhoto.url).then(result => {
+            setMessages(prev => prev.map(msg => {
+              if (msg.id !== messageId || !msg.placePhotos) return msg;
+              
+              return {
+                ...msg,
+                placePhotos: msg.placePhotos.map(pp => 
+                  pp.url === placePhoto.url 
+                    ? { 
+                        ...pp, 
+                        loading: false, 
+                        photoUrl: result.success ? result.photoUrl : undefined,
+                        placeName: result.success ? result.placeName : undefined,
+                      }
+                    : pp
+                ),
+              };
+            }));
+          });
+        }
+      }
     } catch (error) {
       console.error("Error connecting to n8n:", error);
       
@@ -260,6 +304,50 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
                             alt="Alojamiento rural" 
                             className="w-full h-48 md:h-56 object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
                           />
+                        </div>
+                      )}
+                      
+                      {/* Google Maps Place Photos */}
+                      {message.placePhotos && message.placePhotos.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          {message.placePhotos.map((place, idx) => (
+                            <div key={idx} className="rounded-xl overflow-hidden border border-border">
+                              {place.loading ? (
+                                <div className="space-y-2">
+                                  <Skeleton className="w-full h-48 md:h-56" />
+                                  <div className="p-3">
+                                    <Skeleton className="h-4 w-3/4" />
+                                  </div>
+                                </div>
+                              ) : place.photoUrl ? (
+                                <div className="relative group">
+                                  <img 
+                                    src={place.photoUrl} 
+                                    alt={place.placeName || "Alojamiento"} 
+                                    className="w-full h-48 md:h-56 object-cover hover:scale-105 transition-transform duration-500"
+                                  />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent opacity-80" />
+                                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                                    <p className="text-primary-foreground font-semibold text-sm flex items-center gap-2">
+                                      <MapPin className="w-4 h-4" />
+                                      {place.placeName || "Ver en Google Maps"}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const topWindow = window.top || window.parent || window;
+                                      topWindow.open(place.url, "_blank", "noopener,noreferrer");
+                                    }}
+                                    className="absolute top-3 right-3 p-2 bg-background/80 hover:bg-background rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                  >
+                                    <ExternalLink className="w-4 h-4 text-foreground" />
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
