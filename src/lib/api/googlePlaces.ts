@@ -15,9 +15,20 @@ export const extractPlaceIdFromUrl = (url: string): string | null => {
   const placeIdMatch = url.match(/place_id[=:]([^&/]+)/i);
   if (placeIdMatch) return placeIdMatch[1];
 
-  // Pattern for /place/ URLs with CID
+  // Pattern for /place/ URLs with CID in data parameter
   const cidMatch = url.match(/\/place\/[^/]+\/(@[^/]+\/)?data=.*!1s(0x[a-f0-9]+:[a-f0-9]+)/i);
   if (cidMatch) return cidMatch[2];
+
+  return null;
+};
+
+/**
+ * Extracts CID (Customer ID) from a Google Maps URL
+ */
+export const extractCidFromUrl = (url: string): string | null => {
+  // Pattern for cid= parameter (e.g., ?cid=7619784663532497854)
+  const cidMatch = url.match(/[?&]cid=(\d+)/);
+  if (cidMatch) return cidMatch[1];
 
   return null;
 };
@@ -53,15 +64,16 @@ export const extractQueryFromUrl = (url: string): string | null => {
 export const fetchPlacePhoto = async (mapsUrl: string): Promise<PlacePhotoResponse> => {
   try {
     const placeId = extractPlaceIdFromUrl(mapsUrl);
+    const cid = extractCidFromUrl(mapsUrl);
     const query = extractQueryFromUrl(mapsUrl);
 
-    if (!placeId && !query) {
+    if (!placeId && !cid && !query) {
       console.log('Could not extract place info from URL:', mapsUrl);
       return { success: false, error: 'Could not parse Google Maps URL' };
     }
 
     const { data, error } = await supabase.functions.invoke('google-places-photo', {
-      body: { placeId, query },
+      body: { placeId, cid, query },
     });
 
     if (error) {
