@@ -72,12 +72,14 @@ export const fetchPlacePhoto = async (mapsUrl: string): Promise<PlacePhotoRespon
       return { success: false, error: 'Could not parse Google Maps URL' };
     }
 
-    const { data, error } = await supabase.functions.invoke('google-places-photo', {
-      body: { placeId, cid, query },
+    // Use backend parsing to support more Google Maps URL variants (incl. cid=...)
+    // and to avoid 404 responses that surface as runtime errors in the client.
+    const { data, error } = await supabase.functions.invoke('google-maps-photo', {
+      body: { mapsUrl },
     });
 
     if (error) {
-      console.error('Error calling google-places-photo:', error);
+      console.error('Error calling google-maps-photo:', error);
       return { success: false, error: error.message };
     }
 
