@@ -21,17 +21,48 @@ const json = (status: number, body: unknown) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const extractOgTitle = (html: string): string | null => {
-  // Most reliable on maps pages
-  const og = html.match(
-    /<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']\s*\/?\s*>/i
+const extractPlaceName = (html: string): string | null => {
+  // Try og:description first - often contains the real place name
+  const ogDesc = html.match(
+    /<meta\s+(?:property|name)=["']og:description["']\s+content=["']([^"']+)["']/i
   );
-  if (og?.[1]) return og[1].trim();
+  if (ogDesc?.[1]) {
+    const desc = ogDesc[1].trim();
+    // og:description often starts with the place name
+    if (desc && !desc.toLowerCase().includes("google maps")) {
+      // Take first sentence or phrase before common separators
+      const namePart = desc.split(/[·\-–—|,]/)[0].trim();
+      if (namePart && namePart.length > 3 && namePart.length < 100) {
+        return namePart;
+      }
+    }
+  }
 
-  // Fallback to <title>
+  // Try og:title but filter out generic "Google Maps" titles
+  const ogTitle = html.match(
+    /<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i
+  );
+  if (ogTitle?.[1]) {
+    const title = ogTitle[1].trim();
+    // Skip if it's just "Google Maps" or similar generic title
+    if (title && !title.toLowerCase().match(/^google\s*(maps)?$/i)) {
+      const cleaned = title.replace(/\s*-\s*Google\s*Maps\s*$/i, "").trim();
+      if (cleaned && cleaned.length > 2) {
+        return cleaned;
+      }
+    }
+  }
+
+  // Fallback to <title> tag
   const title = html.match(/<title>([^<]+)<\/title>/i);
-  if (!title?.[1]) return null;
-  return title[1].replace(/\s*-\s*Google\s*Maps\s*$/i, "").trim();
+  if (title?.[1]) {
+    const cleaned = title[1].replace(/\s*-\s*Google\s*Maps\s*$/i, "").trim();
+    if (cleaned && !cleaned.toLowerCase().match(/^google\s*(maps)?$/i) && cleaned.length > 2) {
+      return cleaned;
+    }
+  }
+
+  return null;
 };
 
 const getPlaceIdFromMapsUrl = (mapsUrl: string): string | null => {
@@ -176,7 +207,7 @@ Deno.serve(async (req) => {
       });
       const html = await pageRes.text();
 
-      const name = extractOgTitle(html);
+      const name = extractPlaceName(html);
       if (name) {
         console.log("CID resolved to name:", name);
         result = await fetchTextSearchPhoto(apiKey, name);
