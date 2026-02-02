@@ -4,14 +4,19 @@ import { X, Send, Sparkles, MapPin, Home, Star, ArrowLeft, ExternalLink } from "
 import ReactMarkdown from "react-markdown";
 import logoIcon from "@/assets/logo-icon.png";
 import heroLandscape from "@/assets/hero-landscape.jpg";
-import { fetchPlacePhoto, isGoogleMapsUrl } from "@/lib/api/googlePlaces";
-import { Skeleton } from "@/components/ui/skeleton";
+import { fetchPlacePhoto } from "@/lib/api/googlePlaces";
+import { PlacePhotoCard } from "@/components/PlacePhotoCard";
 
 interface PlacePhoto {
   url: string;
   photoUrl?: string;
   placeName?: string;
   loading: boolean;
+}
+
+interface ContentBlock {
+  text: string;
+  mapsUrl?: string;
 }
 
 interface Message {
@@ -21,6 +26,7 @@ interface Message {
   image?: string;
   suggestions?: string[];
   placePhotos?: PlacePhoto[];
+  contentBlocks?: ContentBlock[];
 }
 
 interface ChatModalProps {
@@ -65,6 +71,36 @@ const extractPerUrlQueryHints = (content: string, mapsUrlRegex: RegExp): Record<
   }
 
   return hints;
+};
+
+const splitContentIntoBlocks = (content: string, mapsUrlRegex: RegExp): ContentBlock[] => {
+  // Split content by accommodation blocks (🏡), keeping the delimiter
+  const rawBlocks = content.split(/(?=🏡)/g);
+  const result: ContentBlock[] = [];
+
+  for (const block of rawBlocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+
+    const urls = trimmed.match(mapsUrlRegex) || [];
+    const mapsUrl = urls.length > 0 ? urls[0] : undefined;
+
+    result.push({
+      text: trimmed,
+      mapsUrl,
+    });
+  }
+
+  // If no blocks were created (no 🏡 markers), return the whole content as one block
+  if (result.length === 0 && content.trim()) {
+    const urls = content.match(mapsUrlRegex) || [];
+    result.push({
+      text: content.trim(),
+      mapsUrl: urls.length > 0 ? urls[0] : undefined,
+    });
+  }
+
+  return result;
 };
 
 export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
@@ -141,6 +177,8 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
         url,
         loading: true,
       }));
+
+      const contentBlocks = splitContentIntoBlocks(content, mapsUrlRegex);
       
       const botMessage: Message = {
         id: Date.now(),
@@ -149,6 +187,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
         image,
         suggestions,
         placePhotos: placePhotos.length > 0 ? placePhotos : undefined,
+        contentBlocks: contentBlocks.length > 0 ? contentBlocks : undefined,
       };
       
       setMessages(prev => [...prev, botMessage]);
@@ -304,32 +343,80 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
                           : "bg-card border border-border rounded-bl-md shadow-md"
                       }`}
                     >
-                      <div className="text-base leading-relaxed prose prose-sm max-w-none prose-a:text-primary prose-a:underline prose-a:font-medium hover:prose-a:text-primary/80">
-                        <ReactMarkdown
-                          components={{
-                            a: ({ href, children }) => (
-                              <a
-                                href={href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  if (!href) return;
-                                  // Use top-level window to escape iframe context
-                                  const topWindow = window.top || window.parent || window;
-                                  topWindow.open(href, "_blank", "noopener,noreferrer");
-                                }}
-                                className="text-primary underline font-medium hover:text-primary/80 transition-colors pointer-events-auto cursor-pointer"
-                              >
-                                {children}
-                              </a>
-                            ),
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
+                      {/* Render content blocks with inline photos */}
+                      {message.contentBlocks && message.contentBlocks.length > 0 ? (
+                        <div className="space-y-4">
+                          {message.contentBlocks.map((block, blockIdx) => {
+                            const placePhoto = block.mapsUrl
+                              ? message.placePhotos?.find(pp => pp.url === block.mapsUrl)
+                              : undefined;
+
+                            return (
+                              <div key={blockIdx}>
+                                <div className="text-base leading-relaxed prose prose-sm max-w-none prose-a:text-primary prose-a:underline prose-a:font-medium hover:prose-a:text-primary/80">
+                                  <ReactMarkdown
+                                    components={{
+                                      a: ({ href, children }) => (
+                                        <a
+                                          href={href}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if (!href) return;
+                                            const topWindow = window.top || window.parent || window;
+                                            topWindow.open(href, "_blank", "noopener,noreferrer");
+                                          }}
+                                          className="text-primary underline font-medium hover:text-primary/80 transition-colors pointer-events-auto cursor-pointer"
+                                        >
+                                          {children}
+                                        </a>
+                                      ),
+                                    }}
+                                  >
+                                    {block.text}
+                                  </ReactMarkdown>
+                                </div>
+                                {placePhoto && (
+                                  <PlacePhotoCard
+                                    url={placePhoto.url}
+                                    photoUrl={placePhoto.photoUrl}
+                                    placeName={placePhoto.placeName}
+                                    loading={placePhoto.loading}
+                                  />
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-base leading-relaxed prose prose-sm max-w-none prose-a:text-primary prose-a:underline prose-a:font-medium hover:prose-a:text-primary/80">
+                          <ReactMarkdown
+                            components={{
+                              a: ({ href, children }) => (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (!href) return;
+                                    const topWindow = window.top || window.parent || window;
+                                    topWindow.open(href, "_blank", "noopener,noreferrer");
+                                  }}
+                                  className="text-primary underline font-medium hover:text-primary/80 transition-colors pointer-events-auto cursor-pointer"
+                                >
+                                  {children}
+                                </a>
+                              ),
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      )}
                       
                       {message.image && (
                         <div className="mt-4 rounded-xl overflow-hidden">
@@ -338,50 +425,6 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
                             alt="Alojamiento rural" 
                             className="w-full h-48 md:h-56 object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
                           />
-                        </div>
-                      )}
-                      
-                      {/* Google Maps Place Photos */}
-                      {message.placePhotos && message.placePhotos.length > 0 && (
-                        <div className="mt-4 space-y-3">
-                          {message.placePhotos.map((place, idx) => (
-                            <div key={idx} className="rounded-xl overflow-hidden border border-border">
-                              {place.loading ? (
-                                <div className="space-y-2">
-                                  <Skeleton className="w-full h-48 md:h-56" />
-                                  <div className="p-3">
-                                    <Skeleton className="h-4 w-3/4" />
-                                  </div>
-                                </div>
-                              ) : place.photoUrl ? (
-                                <div className="relative group">
-                                  <img 
-                                    src={place.photoUrl} 
-                                    alt={place.placeName || "Alojamiento"} 
-                                    className="w-full h-48 md:h-56 object-cover hover:scale-105 transition-transform duration-500"
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent opacity-80" />
-                                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                                    <p className="text-primary-foreground font-semibold text-sm flex items-center gap-2">
-                                      <MapPin className="w-4 h-4" />
-                                      {place.placeName || "Ver en Google Maps"}
-                                    </p>
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      const topWindow = window.top || window.parent || window;
-                                      topWindow.open(place.url, "_blank", "noopener,noreferrer");
-                                    }}
-                                    className="absolute top-3 right-3 p-2 bg-background/80 hover:bg-background rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                  >
-                                    <ExternalLink className="w-4 h-4 text-foreground" />
-                                  </button>
-                                </div>
-                              ) : null}
-                            </div>
-                          ))}
                         </div>
                       )}
                     </div>
