@@ -38,11 +38,33 @@ const initialMessages: Message[] = [
 ];
 
 const extractPlaceQueryHint = (content: string): string | undefined => {
-  // Heuristic: name in bold + address line (works with current n8n format)
-  const name = content.match(/🏡\s*\*\*([^*]+)\*\*/)?.[1]?.trim();
+  // Fallback: first accommodation in the message
+  const name = content.match(/🏡\s*(?:\*\*)?([^\n*]+?)(?:\*\*)?\s*$/m)?.[1]?.trim();
   const address = content.match(/📍\s*([^\n]+)/)?.[1]?.trim();
   const hint = [name, address].filter(Boolean).join(", ").trim();
   return hint ? hint : undefined;
+};
+
+const extractPerUrlQueryHints = (content: string, mapsUrlRegex: RegExp): Record<string, string> => {
+  // Split by accommodation blocks (🏡 ...) and compute a hint per block.
+  const blocks = content.split(/(?=🏡)/g);
+  const hints: Record<string, string> = {};
+
+  for (const block of blocks) {
+    const urls = block.match(mapsUrlRegex) || [];
+    if (urls.length === 0) continue;
+
+    const name = block.match(/🏡\s*(?:\*\*)?([^\n*]+?)(?:\*\*)?\s*$/m)?.[1]?.trim();
+    const address = block.match(/📍\s*([^\n]+)/)?.[1]?.trim();
+    const hint = [name, address].filter(Boolean).join(", ").trim();
+    if (!hint) continue;
+
+    for (const url of urls) {
+      hints[url] = hint;
+    }
+  }
+
+  return hints;
 };
 
 export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
@@ -112,7 +134,8 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
       const mapsUrlRegex = /https?:\/\/(?:www\.)?(?:google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|goo\.gl\/maps)[^\s)>\]]+/gi;
       const mapsUrls = content.match(mapsUrlRegex) || [];
 
-      const queryHint = extractPlaceQueryHint(content);
+      const globalQueryHint = extractPlaceQueryHint(content);
+      const perUrlHints = extractPerUrlQueryHints(content, mapsUrlRegex);
       
       const placePhotos: PlacePhoto[] = mapsUrls.map(url => ({
         url,
@@ -135,7 +158,8 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
         const messageId = botMessage.id;
         
         for (const placePhoto of placePhotos) {
-          fetchPlacePhoto(placePhoto.url, queryHint).then(result => {
+          const hintForThisUrl = perUrlHints[placePhoto.url] || globalQueryHint;
+          fetchPlacePhoto(placePhoto.url, hintForThisUrl).then(result => {
             setMessages(prev => prev.map(msg => {
               if (msg.id !== messageId || !msg.placePhotos) return msg;
               
