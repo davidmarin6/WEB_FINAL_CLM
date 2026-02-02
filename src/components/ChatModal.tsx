@@ -37,6 +37,14 @@ const initialMessages: Message[] = [
   }
 ];
 
+const extractPlaceQueryHint = (content: string): string | undefined => {
+  // Heuristic: name in bold + address line (works with current n8n format)
+  const name = content.match(/🏡\s*\*\*([^*]+)\*\*/)?.[1]?.trim();
+  const address = content.match(/📍\s*([^\n]+)/)?.[1]?.trim();
+  const hint = [name, address].filter(Boolean).join(", ").trim();
+  return hint ? hint : undefined;
+};
+
 export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputValue, setInputValue] = useState("");
@@ -103,6 +111,8 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
       // Extract Google Maps URLs and prepare for photo fetching
       const mapsUrlRegex = /https?:\/\/(?:www\.)?(?:google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|goo\.gl\/maps)[^\s)>\]]+/gi;
       const mapsUrls = content.match(mapsUrlRegex) || [];
+
+      const queryHint = extractPlaceQueryHint(content);
       
       const placePhotos: PlacePhoto[] = mapsUrls.map(url => ({
         url,
@@ -125,7 +135,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
         const messageId = botMessage.id;
         
         for (const placePhoto of placePhotos) {
-          fetchPlacePhoto(placePhoto.url).then(result => {
+          fetchPlacePhoto(placePhoto.url, queryHint).then(result => {
             setMessages(prev => prev.map(msg => {
               if (msg.id !== messageId || !msg.placePhotos) return msg;
               

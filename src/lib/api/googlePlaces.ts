@@ -61,7 +61,10 @@ export const extractQueryFromUrl = (url: string): string | null => {
 /**
  * Fetches a photo for a Google Maps place
  */
-export const fetchPlacePhoto = async (mapsUrl: string): Promise<PlacePhotoResponse> => {
+export const fetchPlacePhoto = async (
+  mapsUrl: string,
+  queryHint?: string
+): Promise<PlacePhotoResponse> => {
   try {
     const placeId = extractPlaceIdFromUrl(mapsUrl);
     const cid = extractCidFromUrl(mapsUrl);
@@ -75,7 +78,7 @@ export const fetchPlacePhoto = async (mapsUrl: string): Promise<PlacePhotoRespon
     // Use backend parsing to support more Google Maps URL variants (incl. cid=...)
     // and to avoid 404 responses that surface as runtime errors in the client.
     const { data, error } = await supabase.functions.invoke('google-maps-photo', {
-      body: { mapsUrl },
+      body: { mapsUrl, queryHint },
     });
 
     if (error) {
