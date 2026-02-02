@@ -65,6 +65,22 @@ const extractPlaceName = (html: string): string | null => {
   return null;
 };
 
+const extractPlaceIdFromHtml = (html: string): string | null => {
+  // Common JSON pattern inside the Maps HTML
+  const m1 = html.match(/"place_id"\s*:\s*"(ChI[^"\\]+)"/);
+  if (m1?.[1]) return m1[1];
+
+  // Some pages include place id as an attribute
+  const m2 = html.match(/data-place-id=["'](ChI[^"']+)["']/);
+  if (m2?.[1]) return m2[1];
+
+  // Last resort: find any token that looks like a Place ID
+  const m3 = html.match(/\bChI[a-zA-Z0-9_-]{20,}\b/);
+  if (m3?.[0]) return m3[0];
+
+  return null;
+};
+
 const getPlaceIdFromMapsUrl = (mapsUrl: string): string | null => {
   // place_id=...
   const placeIdMatch = mapsUrl.match(/place_id[=:]([^&/]+)/i);
@@ -152,11 +168,51 @@ const fetchTextSearchPhoto = async (apiKey: string, query: string) => {
   return null;
 };
 
+const fetchFindPlaceByCid = async (apiKey: string, cid: string) => {
+  const input = `cid:${cid}`;
+  const findUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(
+    input
+  )}&inputtype=textquery&fields=place_id,name,photos&key=${apiKey}`;
+
+  const findRes = await fetch(findUrl);
+  const findData = await findRes.json();
+
+  if (findData.status && findData.status !== "OK") {
+    if (findData.status === "ZERO_RESULTS") return null;
+    const err = findData.error_message
+      ? `${findData.status}: ${findData.error_message}`
+      : `${findData.status}`;
+    throw new Error(`Google Places FindPlace error (${err})`);
+  }
+
+  if (!findData.candidates?.length) return null;
+
+  const first = findData.candidates[0];
+  const placeName = (first.name as string | undefined) ?? null;
+
+  if (first.photos?.length > 0) {
+    return {
+      placeName,
+      photoReference: first.photos[0].photo_reference as string,
+    };
+  }
+
+  // If no photos returned, try details with place_id
+  if (first.place_id) {
+    return await fetchPlaceDetailsPhoto(apiKey, first.place_id as string);
+  }
+
+  return null;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { mapsUrl } = (await req.json()) as { mapsUrl?: string };
+    const { mapsUrl, queryHint } = (await req.json()) as {
+      mapsUrl?: string;
+      queryHint?: string;
+    };
 
     if (!mapsUrl || typeof mapsUrl !== "string") {
       return json(200, { success: false, error: "Missing mapsUrl" } satisfies GoogleMapsPhotoResponse);
@@ -194,8 +250,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (!result && queryHint && typeof queryHint === "string" && queryHint.trim()) {
+      const hint = queryHint.trim();
+      console.log("Searching place by query hint:", hint);
+      result = await fetchTextSearchPhoto(apiKey, hint);
+    }
+
     if (!result && cid) {
-      console.log("Resolving place name from CID:", cid);
+      console.log("Resolving place from CID via Maps HTML:", cid);
 
       const mapsPageUrl = `https://www.google.com/maps?cid=${encodeURIComponent(cid)}`;
       const pageRes = await fetch(mapsPageUrl, {
@@ -207,12 +269,26 @@ Deno.serve(async (req) => {
       });
       const html = await pageRes.text();
 
-      const name = extractPlaceName(html);
-      if (name) {
-        console.log("CID resolved to name:", name);
-        result = await fetchTextSearchPhoto(apiKey, name);
-      } else {
-        console.log("Could not resolve name from CID HTML");
+      const placeIdFromHtml = extractPlaceIdFromHtml(html);
+      if (placeIdFromHtml) {
+        console.log("CID HTML resolved to placeId:", placeIdFromHtml);
+        result = await fetchPlaceDetailsPhoto(apiKey, placeIdFromHtml);
+      }
+
+      if (!result) {
+        const name = extractPlaceName(html);
+        if (name) {
+          console.log("CID scraped name:", name);
+          result = await fetchTextSearchPhoto(apiKey, name);
+        } else {
+          console.log("Could not resolve name from CID HTML");
+        }
+      }
+
+      // Last resort: FindPlace (can be inaccurate, so only if HTML parsing fails)
+      if (!result) {
+        console.log("CID HTML lookup failed; trying FindPlace fallback:", cid);
+        result = await fetchFindPlaceByCid(apiKey, cid);
       }
     }
 
