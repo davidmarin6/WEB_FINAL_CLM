@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Sparkles, MapPin, Home, Star, ArrowLeft, ExternalLink } from "lucide-react";
+import { X, Send, Sparkles, MapPin, Home, Star, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import logoIcon from "@/assets/logo-icon.png";
 import heroLandscape from "@/assets/hero-landscape.jpg";
 import { fetchPlacePhoto } from "@/lib/api/googlePlaces";
 import { PlacePhotoCard } from "@/components/PlacePhotoCard";
+import { LocationsMap } from "@/components/LocationsMap";
 
 interface PlacePhoto {
   url: string;
@@ -108,6 +109,7 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId] = useState(() => crypto.randomUUID());
+  const [showMap, setShowMap] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -485,8 +487,14 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
           <div className="relative border-t border-border bg-background/80 backdrop-blur-sm">
             <div className="max-w-3xl mx-auto px-4 py-3">
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <button
+                  className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 rounded-full text-sm text-muted-foreground whitespace-nowrap transition-all hover:scale-105"
+                  onClick={() => setShowMap(true)}
+                >
+                  <MapPin className="w-4 h-4" />
+                  Ver mapa
+                </button>
                 {[
-                  { icon: MapPin, label: "Ver mapa" },
                   { icon: Home, label: "Tipos de casa" },
                   { icon: Star, label: "Mejor valorados" },
                 ].map((action, idx) => (
@@ -502,6 +510,9 @@ export const ChatModal = ({ isOpen, onClose }: ChatModalProps) => {
               </div>
             </div>
           </div>
+
+          {/* Locations Map Modal */}
+          <LocationsMap isOpen={showMap} onClose={() => setShowMap(false)} />
 
           {/* Input */}
           <motion.div 
