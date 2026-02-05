@@ -2,8 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Loader2, ExternalLink } from "lucide-react";
 import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
-import { supabase } from "@/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 import { useGoogleMaps } from "@/contexts/GoogleMapsContext";
+
+// External Supabase client for locations data
+const externalSupabase = createClient(
+  "https://gxxawcabaumewbprimrw.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4eGF3Y2FiYXVtZXdicHJpbXJ3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTYyMTcyMCwiZXhwIjoyMDg1MTk3NzIwfQ.VQcEsggIIoLDHf7DlDEF_p9987Q_96p8uM8G2IE36AQ"
+);
 
 interface Location {
   id: string;
@@ -41,15 +47,25 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("get-locations");
+      // Query lugares directly from external Supabase
+      const { data: lugares, error: fetchError } = await externalSupabase
+        .from("lugares")
+        .select("id, nombre, direccion, latitud, longitud");
 
-      if (fnError) {
-        throw fnError;
+      if (fetchError) {
+        throw fetchError;
       }
 
-      if (data?.locations) {
-        setLocations(data.locations);
-      }
+      // Map the data to our Location interface
+      const locationsData: Location[] = (lugares || []).map((lugar: { id: string; nombre: string; direccion: string; latitud?: number; longitud?: number }) => ({
+        id: lugar.id,
+        nombre: lugar.nombre,
+        direccion: lugar.direccion,
+        lat: lugar.latitud,
+        lng: lugar.longitud,
+      }));
+
+      setLocations(locationsData);
     } catch (err) {
       console.error("Error fetching locations:", err);
       setError("No se pudieron cargar las ubicaciones");
@@ -84,8 +100,8 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
       location.lat && location.lng
         ? `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`
         : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            location.direccion
-          )}`;
+          location.direccion
+        )}`;
 
     const topWindow = window.top || window.parent || window;
     topWindow.open(url, "_blank", "noopener,noreferrer");

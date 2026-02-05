@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import logoHorizontal from "@/assets/logo-horizontal.png";
+import logoHorizontal from "@/assets/logo-viajaclm.png";
 import heroLandscape from "@/assets/hero-landscape.jpg";
 import { ChatMockup } from "./ChatMockup";
 import { useChat } from "@/contexts/ChatContext";
@@ -75,7 +75,7 @@ export const HeroSection = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              Tu asistente inteligente para encontrar el alojamiento rural perfecto. 
+              Tu asistente inteligente para encontrar el alojamiento rural perfecto.
               Conversaciones naturales, recomendaciones personalizadas.
             </motion.p>
 
@@ -96,7 +96,7 @@ export const HeroSection = () => {
                   →
                 </motion.span>
               </button>
-              <a 
+              <a
                 href="#how-it-works"
                 className="btn-secondary backdrop-blur-md bg-primary-foreground/20 text-primary-foreground border border-primary-foreground/30 text-center"
               >

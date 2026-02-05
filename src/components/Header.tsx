@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import logoHorizontal from "@/assets/logo-horizontal.png";
+import logoHorizontal from "@/assets/logo-viajaclm.png";
 import { Menu, X } from "lucide-react";
 import { useChat } from "@/contexts/ChatContext";
 
@@ -31,11 +31,10 @@ export const Header = () => {
 
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-        isScrolled
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${isScrolled
           ? "py-3 bg-background/80 backdrop-blur-lg shadow-sm"
           : "py-5 bg-transparent"
-      }`}
+        }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6 }}
@@ -47,9 +46,8 @@ export const Header = () => {
             <img
               src={logoHorizontal}
               alt="viajaCLM"
-              className={`transition-all duration-300 object-contain max-w-[160px] md:max-w-[180px] ${
-                isScrolled ? "h-9 md:h-10" : "h-10 md:h-12"
-              }`}
+              className={`transition-all duration-300 object-contain max-w-[160px] md:max-w-[180px] ${isScrolled ? "h-9 md:h-10" : "h-10 md:h-12"
+                }`}
             />
           </a>
 
@@ -59,14 +57,13 @@ export const Header = () => {
               <a
                 key={index}
                 href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isScrolled ? "text-foreground" : "text-primary-foreground"
-                }`}
+                className={`text-sm font-medium transition-colors hover:text-primary ${isScrolled ? "text-foreground" : "text-primary-foreground"
+                  }`}
               >
                 {item.label}
               </a>
             ))}
-            <button 
+            <button
               onClick={handleComenzarClick}
               className="btn-hero px-6 py-2.5 text-sm"
             >

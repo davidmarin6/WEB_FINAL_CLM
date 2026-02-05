@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import logoHorizontal from "@/assets/logo-horizontal.png";
+import logoHorizontal from "@/assets/logo-viajaclm.png";
 
 export const Footer = () => {
   return (
@@ -14,7 +14,7 @@ export const Footer = () => {
               className="h-12 mb-4 brightness-0 invert opacity-90"
             />
             <p className="text-primary-foreground/70 max-w-sm mb-6">
-              Tu asistente inteligente para descubrir los mejores alojamientos rurales 
+              Tu asistente inteligente para descubrir los mejores alojamientos rurales
               de Castilla-La Mancha. Tecnología al servicio del turismo rural.
             </p>
             <div className="flex gap-4">
