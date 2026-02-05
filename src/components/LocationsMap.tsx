@@ -1,23 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Loader2, ExternalLink } from "lucide-react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
+import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
 import { supabase } from "@/integrations/supabase/client";
-import "leaflet/dist/leaflet.css";
-
-// Fix for default marker icon in Leaflet with webpack/vite
-const defaultIcon = L.icon({
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
-L.Marker.prototype.options.icon = defaultIcon;
+import { useGoogleMaps } from "@/contexts/GoogleMapsContext";
 
 interface Location {
   id: string;
@@ -32,19 +18,30 @@ interface LocationsMapProps {
   onClose: () => void;
 }
 
+const mapContainerStyle = {
+  width: "100%",
+  height: "100%",
+  minHeight: "300px",
+};
+
+const defaultCenter = {
+  lat: 39.4,
+  lng: -3.0,
+};
+
 export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
+  const { isLoaded, loadError } = useGoogleMaps();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
   const fetchLocations = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke(
-        "get-locations"
-      );
+      const { data, error: fnError } = await supabase.functions.invoke("get-locations");
 
       if (fnError) {
         throw fnError;
@@ -69,21 +66,27 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
 
   const validLocations = locations.filter((loc) => loc.lat && loc.lng);
 
-  // Calculate center based on locations or default to Castilla-La Mancha
-  const getCenter = (): [number, number] => {
+  const getCenter = (): { lat: number; lng: number } => {
     if (validLocations.length > 0) {
-      const avgLat = validLocations.reduce((sum, loc) => sum + (loc.lat || 0), 0) / validLocations.length;
-      const avgLng = validLocations.reduce((sum, loc) => sum + (loc.lng || 0), 0) / validLocations.length;
-      return [avgLat, avgLng];
+      const avgLat =
+        validLocations.reduce((sum, loc) => sum + (loc.lat || 0), 0) /
+        validLocations.length;
+      const avgLng =
+        validLocations.reduce((sum, loc) => sum + (loc.lng || 0), 0) /
+        validLocations.length;
+      return { lat: avgLat, lng: avgLng };
     }
-    return [39.4, -3.0]; // Center of Castilla-La Mancha
+    return defaultCenter;
   };
 
   const openInGoogleMaps = (location: Location) => {
-    const url = location.lat && location.lng
-      ? `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.direccion)}`;
-    
+    const url =
+      location.lat && location.lng
+        ? `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            location.direccion
+          )}`;
+
     const topWindow = window.top || window.parent || window;
     topWindow.open(url, "_blank", "noopener,noreferrer");
   };
@@ -130,7 +133,18 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             {/* Map */}
             <div className="flex-1 relative bg-muted">
-              {loading ? (
+              {loadError ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center p-4">
+                    <p className="text-destructive mb-2">
+                      Error al cargar el mapa
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {loadError.message}
+                    </p>
+                  </div>
+                </div>
+              ) : !isLoaded || loading ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="flex flex-col items-center gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -150,37 +164,50 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
                   </div>
                 </div>
               ) : (
-                <MapContainer
+                <GoogleMap
+                  mapContainerStyle={mapContainerStyle}
                   center={getCenter()}
                   zoom={8}
-                  className="w-full h-full"
-                  style={{ minHeight: "300px" }}
+                  options={{
+                    streetViewControl: false,
+                    mapTypeControl: false,
+                    fullscreenControl: true,
+                  }}
                 >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
                   {validLocations.map((location) => (
                     <Marker
                       key={location.id}
-                      position={[location.lat!, location.lng!]}
-                    >
-                      <Popup>
-                        <div className="p-1">
-                          <p className="font-semibold text-sm">{location.nombre}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{location.direccion}</p>
-                          <button
-                            onClick={() => openInGoogleMaps(location)}
-                            className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
-                          >
-                            Abrir en Google Maps
-                            <ExternalLink className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </Popup>
-                    </Marker>
+                      position={{ lat: location.lat!, lng: location.lng! }}
+                      onClick={() => setSelectedLocation(location)}
+                    />
                   ))}
-                </MapContainer>
+
+                  {selectedLocation && selectedLocation.lat && selectedLocation.lng && (
+                    <InfoWindow
+                      position={{
+                        lat: selectedLocation.lat,
+                        lng: selectedLocation.lng,
+                      }}
+                      onCloseClick={() => setSelectedLocation(null)}
+                    >
+                      <div className="p-2">
+                        <p className="font-semibold text-sm text-gray-900">
+                          {selectedLocation.nombre}
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {selectedLocation.direccion}
+                        </p>
+                        <button
+                          onClick={() => openInGoogleMaps(selectedLocation)}
+                          className="mt-2 text-xs text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          Abrir en Google Maps
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </InfoWindow>
+                  )}
+                </GoogleMap>
               )}
             </div>
 
