@@ -1,78 +1,34 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import { useJsApiLoader, Libraries } from "@react-google-maps/api";
-import { supabase } from "@/integrations/supabase/client";
 
 interface GoogleMapsContextType {
   isLoaded: boolean;
   loadError: Error | undefined;
-  apiKey: string | null;
+  apiKey: string;
 }
+
+// API key con Places API habilitada
+const GOOGLE_MAPS_API_KEY = "AIzaSyDS_pqIroU6m_-X71VXyErYtji_52FbeoY";
 
 const GoogleMapsContext = createContext<GoogleMapsContextType>({
   isLoaded: false,
   loadError: undefined,
-  apiKey: null,
+  apiKey: GOOGLE_MAPS_API_KEY,
 });
 
 const libraries: Libraries = ["places"];
 
-// Inner component that loads Google Maps only when API key is available
-const GoogleMapsLoaderInner = ({ 
-  apiKey, 
-  children 
-}: { 
-  apiKey: string; 
-  children: ReactNode;
-}) => {
+export const GoogleMapsProvider = ({ children }: { children: ReactNode }) => {
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: apiKey,
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries,
     preventGoogleFontsLoading: true,
   });
 
   return (
-    <GoogleMapsContext.Provider value={{ isLoaded, loadError, apiKey }}>
+    <GoogleMapsContext.Provider value={{ isLoaded, loadError, apiKey: GOOGLE_MAPS_API_KEY }}>
       {children}
     </GoogleMapsContext.Provider>
-  );
-};
-
-export const GoogleMapsProvider = ({ children }: { children: ReactNode }) => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [loadingKey, setLoadingKey] = useState(true);
-
-  // Fetch API key from edge function
-  useEffect(() => {
-    const fetchApiKey = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("get-google-maps-key");
-        if (error) throw error;
-        if (data?.apiKey) {
-          setApiKey(data.apiKey);
-        }
-      } catch (err) {
-        console.error("Failed to fetch Google Maps API key:", err);
-      } finally {
-        setLoadingKey(false);
-      }
-    };
-    fetchApiKey();
-  }, []);
-
-  // If still loading or no API key, provide a default context
-  if (loadingKey || !apiKey) {
-    return (
-      <GoogleMapsContext.Provider value={{ isLoaded: false, loadError: undefined, apiKey: null }}>
-        {children}
-      </GoogleMapsContext.Provider>
-    );
-  }
-
-  // Once we have the API key, use the inner loader
-  return (
-    <GoogleMapsLoaderInner apiKey={apiKey}>
-      {children}
-    </GoogleMapsLoaderInner>
   );
 };
 

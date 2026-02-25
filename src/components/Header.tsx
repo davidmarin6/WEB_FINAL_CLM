@@ -5,13 +5,18 @@ import { Menu, X } from "lucide-react";
 import { useChat } from "@/contexts/ChatContext";
 
 const navItems = [
-  { label: "Inicio", href: "#" },
-  { label: "Cómo funciona", href: "#how-it-works" },
-  { label: "Características", href: "#features" },
-  { label: "Galería", href: "#gallery" },
+  { label: "Inicio", href: "/" },
+  { label: "Alojamientos", href: "/alojamientos" },
+  { label: "Cómo funciona", href: "/#how-it-works" },
+  { label: "Características", href: "/#features" },
+  { label: "Galería", href: "/#gallery" },
 ];
 
-export const Header = () => {
+interface HeaderProps {
+  variant?: 'transparent' | 'solid';
+}
+
+export const Header = ({ variant = 'transparent' }: HeaderProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { openChat } = useChat();
@@ -29,11 +34,13 @@ export const Header = () => {
     openChat();
   };
 
+  const isSolidTheme = variant === 'solid' || isScrolled;
+
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${isScrolled
-          ? "py-3 bg-background/80 backdrop-blur-lg shadow-sm"
-          : "py-5 bg-transparent"
+      className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${isSolidTheme
+        ? "py-3 bg-background/80 backdrop-blur-lg shadow-sm"
+        : "py-5 bg-transparent"
         }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -57,7 +64,7 @@ export const Header = () => {
               <a
                 key={index}
                 href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${isScrolled ? "text-foreground" : "text-primary-foreground"
+                className={`text-sm font-medium transition-colors hover:text-primary ${isSolidTheme ? "text-foreground" : "text-primary-foreground"
                   }`}
               >
                 {item.label}

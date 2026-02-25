@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, Loader2, ExternalLink } from "lucide-react";
+import { X, MapPin, Loader2, ExternalLink, Building2, Star, Phone, Globe } from "lucide-react";
 import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
 import { createClient } from "@supabase/supabase-js";
 import { useGoogleMaps } from "@/contexts/GoogleMapsContext";
@@ -17,7 +17,206 @@ interface Location {
   direccion: string;
   lat?: number;
   lng?: number;
+  rating?: number;
+  place_id?: string;
+  telefono_nacional?: string;
+  telefono_internacional?: string;
+  sitio_web?: string;
+  url_google_maps?: string;
 }
+
+// Componente para el contenido del InfoWindow con foto
+const InfoWindowContent = ({
+  location,
+  placesService,
+}: {
+  location: Location;
+  placesService: google.maps.places.PlacesService | null;
+}) => {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoLoading, setPhotoLoading] = useState(true);
+
+  useEffect(() => {
+    if (!location.place_id || !placesService) {
+      setPhotoLoading(false);
+      return;
+    }
+
+    placesService.getDetails(
+      {
+        placeId: location.place_id,
+        fields: ["photos"],
+      },
+      (place, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && place?.photos?.[0]) {
+          const url = place.photos[0].getUrl({ maxWidth: 400, maxHeight: 200 });
+          setPhotoUrl(url);
+        }
+        setPhotoLoading(false);
+      }
+    );
+  }, [location.place_id, placesService]);
+
+  return (
+    <div style={{ width: '260px', margin: '-8px -8px 0 -8px', overflow: 'visible' }}>
+      {/* Foto de portada con overlay de rating */}
+      <div style={{ position: 'relative', width: '100%', height: '100px', overflow: 'hidden', borderRadius: '8px 8px 0 0' }}>
+        {photoLoading ? (
+          <div style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)'
+          }}>
+            <Loader2 style={{ width: '24px', height: '24px', animation: 'spin 1s linear infinite', color: '#9ca3af' }} />
+          </div>
+        ) : photoUrl ? (
+          <img
+            src={photoUrl}
+            alt={location.nombre}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <div style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #3b82f6 100%)'
+          }}>
+            <Building2 style={{ width: '40px', height: '40px', color: 'rgba(255,255,255,0.8)' }} />
+            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px', marginTop: '4px', fontWeight: '500' }}>Alojamiento</span>
+          </div>
+        )}
+
+        {/* Badge de rating superpuesto */}
+        {location.rating && (
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            background: 'rgba(255,255,255,0.95)',
+            backdropFilter: 'blur(8px)',
+            padding: '4px 10px',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+          }}>
+            <Star style={{ width: '14px', height: '14px', color: '#eab308', fill: '#eab308' }} />
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1f2937' }}>{location.rating}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Contenido */}
+      <div style={{ padding: '10px 12px 10px 12px' }}>
+        {/* Nombre */}
+        <h3 style={{
+          fontSize: '14px',
+          fontWeight: 700,
+          color: '#1f2937',
+          margin: '0 0 4px 0',
+          lineHeight: '1.2'
+        }}>
+          {location.nombre}
+        </h3>
+
+        {/* Dirección con icono */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '8px' }}>
+          <MapPin style={{ width: '12px', height: '12px', color: '#9ca3af', marginTop: '2px', flexShrink: 0 }} />
+          <p style={{
+            fontSize: '11px',
+            color: '#6b7280',
+            margin: 0,
+            lineHeight: '1.3',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
+          }}>
+            {location.direccion}
+          </p>
+        </div>
+
+        {/* Acciones en fila */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {location.telefono_nacional && (
+            <a
+              href={`tel:${location.telefono_internacional}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                padding: '5px 10px',
+                background: '#f3f4f6',
+                borderRadius: '16px',
+                fontSize: '10px',
+                color: '#374151',
+                textDecoration: 'none',
+                fontWeight: 500
+              }}
+            >
+              <Phone style={{ width: '10px', height: '10px', color: '#f97316' }} />
+              Llamar
+            </a>
+          )}
+
+          {location.sitio_web && (
+            <a
+              href={location.sitio_web}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                padding: '5px 10px',
+                background: '#f3f4f6',
+                borderRadius: '16px',
+                fontSize: '10px',
+                color: '#374151',
+                textDecoration: 'none',
+                fontWeight: 500
+              }}
+            >
+              <Globe style={{ width: '10px', height: '10px', color: '#3b82f6' }} />
+              Web
+            </a>
+          )}
+
+          {location.url_google_maps && (
+            <a
+              href={location.url_google_maps}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                padding: '5px 10px',
+                background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                borderRadius: '16px',
+                fontSize: '10px',
+                color: 'white',
+                textDecoration: 'none',
+                fontWeight: 600,
+                boxShadow: '0 2px 6px rgba(249, 115, 22, 0.3)'
+              }}
+            >
+              🗺️ Maps
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface LocationsMapProps {
   isOpen: boolean;
@@ -35,35 +234,124 @@ const defaultCenter = {
   lng: -3.0,
 };
 
+// Tarjeta individual con foto de Google Places
+const LocationCard = ({
+  location,
+  placesService,
+  onClick,
+}: {
+  location: Location;
+  placesService: google.maps.places.PlacesService | null;
+  onClick: () => void;
+}) => {
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoLoading, setPhotoLoading] = useState(true);
+
+  useEffect(() => {
+    if (!placesService) {
+      setPhotoLoading(false);
+      return;
+    }
+
+    placesService.textSearch(
+      { query: location.nombre + " Castilla-La Mancha España" },
+      (results, status) => {
+        if (
+          status === google.maps.places.PlacesServiceStatus.OK &&
+          results &&
+          results[0]?.photos?.[0]
+        ) {
+          setPhotoUrl(results[0].photos[0].getUrl({ maxWidth: 400, maxHeight: 200 }));
+        }
+        setPhotoLoading(false);
+      }
+    );
+  }, [location.nombre, placesService]);
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left rounded-xl overflow-hidden bg-card border border-border hover:border-primary/50 transition-all group shadow-sm hover:shadow-md"
+    >
+      {/* Foto */}
+      <div className="w-full h-36 relative overflow-hidden bg-muted">
+        {photoLoading ? (
+          <div className="w-full h-full flex items-center justify-center bg-muted animate-pulse">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : photoUrl ? (
+          <img
+            src={photoUrl}
+            alt={location.nombre}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
+            <Building2 className="w-10 h-10 text-primary/40" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+
+      {/* Info */}
+      <div className="p-3 flex items-start gap-2">
+        <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
+            {location.nombre}
+          </p>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            {location.direccion}
+          </p>
+        </div>
+        <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-0.5" />
+      </div>
+    </button>
+  );
+};
+
 export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
   const { isLoaded, loadError } = useGoogleMaps();
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [placesService, setPlacesService] = useState<google.maps.places.PlacesService | null>(null);
+  const placesRef = useRef<HTMLDivElement>(null);
+
+  // Inicializar PlacesService cuando Maps esté cargado
+  useEffect(() => {
+    if (isLoaded && placesRef.current && !placesService) {
+      setPlacesService(new google.maps.places.PlacesService(placesRef.current));
+    }
+  }, [isLoaded, placesService]);
 
   const fetchLocations = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // Query lugares directly from external Supabase
       const { data: lugares, error: fetchError } = await externalSupabase
         .from("lugares")
-        .select("id, nombre, direccion, latitud, longitud");
+        .select("*");
 
-      if (fetchError) {
-        throw fetchError;
-      }
+      if (fetchError) throw fetchError;
 
-      // Map the data to our Location interface
-      const locationsData: Location[] = (lugares || []).map((lugar: { id: string; nombre: string; direccion: string; latitud?: number; longitud?: number }) => ({
-        id: lugar.id,
-        nombre: lugar.nombre,
-        direccion: lugar.direccion,
-        lat: lugar.latitud,
-        lng: lugar.longitud,
-      }));
+      const locationsData: Location[] = (lugares || []).map(
+        (lugar: any) => ({
+          id: lugar.id,
+          nombre: lugar.nombre,
+          direccion: lugar.direccion,
+          lat: lugar.latitud,
+          lng: lugar.longitud,
+          rating: lugar.rating,
+          place_id: lugar.place_id,
+          telefono_nacional: lugar.telefono_nacional,
+          telefono_internacional: lugar.telefono_internacional,
+          sitio_web: lugar.sitio_web,
+          url_google_maps: lugar.url_google_maps,
+        })
+      );
 
       setLocations(locationsData);
     } catch (err) {
@@ -84,12 +372,8 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
 
   const getCenter = (): { lat: number; lng: number } => {
     if (validLocations.length > 0) {
-      const avgLat =
-        validLocations.reduce((sum, loc) => sum + (loc.lat || 0), 0) /
-        validLocations.length;
-      const avgLng =
-        validLocations.reduce((sum, loc) => sum + (loc.lng || 0), 0) /
-        validLocations.length;
+      const avgLat = validLocations.reduce((sum, loc) => sum + (loc.lat || 0), 0) / validLocations.length;
+      const avgLng = validLocations.reduce((sum, loc) => sum + (loc.lng || 0), 0) / validLocations.length;
       return { lat: avgLat, lng: avgLng };
     }
     return defaultCenter;
@@ -99,10 +383,7 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
     const url =
       location.lat && location.lng
         ? `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`
-        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-          location.direccion
-        )}`;
-
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.direccion)}`;
     const topWindow = window.top || window.parent || window;
     topWindow.open(url, "_blank", "noopener,noreferrer");
   };
@@ -119,6 +400,9 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
+          {/* Hidden div para PlacesService */}
+          <div ref={placesRef} style={{ display: "none" }} />
+
           {/* Header */}
           <motion.header
             className="flex items-center justify-between px-4 md:px-8 py-4 bg-gradient-to-r from-primary to-accent border-b border-border"
@@ -152,12 +436,8 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
               {loadError ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center p-4">
-                    <p className="text-destructive mb-2">
-                      Error al cargar el mapa
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {loadError.message}
-                    </p>
+                    <p className="text-destructive mb-2">Error al cargar el mapa</p>
+                    <p className="text-sm text-muted-foreground">{loadError.message}</p>
                   </div>
                 </div>
               ) : !isLoaded || loading ? (
@@ -171,10 +451,7 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center p-4">
                     <p className="text-destructive mb-2">{error}</p>
-                    <button
-                      onClick={fetchLocations}
-                      className="text-primary underline"
-                    >
+                    <button onClick={fetchLocations} className="text-primary underline">
                       Reintentar
                     </button>
                   </div>
@@ -195,56 +472,49 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
                       key={location.id}
                       position={{ lat: location.lat!, lng: location.lng! }}
                       onClick={() => setSelectedLocation(location)}
+                      title={location.nombre}
+                      icon={{
+                        url: '/windmill-marker.png',
+                        scaledSize: new google.maps.Size(52, 52),
+                        anchor: new google.maps.Point(26, 52)
+                      }}
                     />
                   ))}
 
                   {selectedLocation && selectedLocation.lat && selectedLocation.lng && (
                     <InfoWindow
-                      position={{
-                        lat: selectedLocation.lat,
-                        lng: selectedLocation.lng,
-                      }}
+                      position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
                       onCloseClick={() => setSelectedLocation(null)}
+                      options={{ maxWidth: 260 }}
                     >
-                      <div className="p-2">
-                        <p className="font-semibold text-sm text-gray-900">
-                          {selectedLocation.nombre}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-1">
-                          {selectedLocation.direccion}
-                        </p>
-                        <button
-                          onClick={() => openInGoogleMaps(selectedLocation)}
-                          className="mt-2 text-xs text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          Abrir en Google Maps
-                          <ExternalLink className="w-3 h-3" />
-                        </button>
-                      </div>
+                      <InfoWindowContent location={selectedLocation} placesService={placesService} />
                     </InfoWindow>
                   )}
                 </GoogleMap>
               )}
             </div>
 
-            {/* Locations List */}
+            {/* Locations List con fotos */}
             <motion.div
-              className="w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-border bg-card overflow-y-auto max-h-[40vh] md:max-h-full"
+              className="w-full md:w-80 lg:w-96 border-t md:border-t-0 md:border-l border-border bg-card overflow-y-auto max-h-[50vh] md:max-h-full"
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
               <div className="p-4">
-                <h2 className="font-semibold text-foreground mb-3">
+                <h2 className="font-semibold text-foreground mb-4">
                   Listado de Alojamientos
                 </h2>
                 {loading ? (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="h-20 bg-muted animate-pulse rounded-lg"
-                      />
+                      <div key={i} className="rounded-xl overflow-hidden border border-border">
+                        <div className="h-36 bg-muted animate-pulse" />
+                        <div className="p-3 space-y-2">
+                          <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                          <div className="h-3 bg-muted animate-pulse rounded w-1/2" />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ) : locations.length === 0 ? (
@@ -252,26 +522,14 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
                     No hay alojamientos disponibles
                   </p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     {locations.map((location) => (
-                      <button
+                      <LocationCard
                         key={location.id}
+                        location={location}
+                        placesService={placesService}
                         onClick={() => openInGoogleMaps(location)}
-                        className="w-full text-left p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
-                      >
-                        <div className="flex items-start gap-3">
-                          <MapPin className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                              {location.nombre}
-                            </p>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {location.direccion}
-                            </p>
-                          </div>
-                          <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                        </div>
-                      </button>
+                      />
                     ))}
                   </div>
                 )}
