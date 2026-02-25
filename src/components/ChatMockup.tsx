@@ -30,14 +30,20 @@ const messages = [
 ];
 
 const TypingIndicator = () => (
-  <div className="flex gap-1.5 px-4 py-3">
-    {[0, 1, 2].map((i) => (
-      <motion.div
-        key={i}
-        className="w-2 h-2 bg-muted-foreground/50 rounded-full typing-dot"
-        style={{ animationDelay: `${i * 0.2}s` }}
-      />
-    ))}
+  <div className="flex items-center gap-3 px-4 py-3">
+    <div className="flex gap-1">
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="w-2 h-2 bg-primary/60 rounded-full"
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.2 }}
+        />
+      ))}
+    </div>
+    <span className="text-sm font-medium text-muted-foreground animate-pulse">
+      Analizando viaje...
+    </span>
   </div>
 );
 
@@ -52,7 +58,7 @@ export const ChatMockup = () => {
       if (index >= messages.length) return;
 
       const message = messages[index];
-      
+
       if (message.type === "bot") {
         setIsTyping(true);
         setTimeout(() => {
@@ -118,11 +124,10 @@ export const ChatMockup = () => {
                 className={`flex ${isBot ? "justify-start" : "justify-end"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-                    isBot
+                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${isBot
                       ? "bg-muted text-foreground rounded-bl-md"
                       : "bg-primary text-primary-foreground rounded-br-md"
-                  }`}
+                    }`}
                 >
                   <p className="text-sm leading-relaxed">{msg.text}</p>
                   {msg.image && (
