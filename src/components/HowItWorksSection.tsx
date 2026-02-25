@@ -13,7 +13,7 @@ const steps = [
   {
     icon: Bot,
     title: "IA busca tu alojamiento ideal",
-    description: "Nuestro asistente analiza +1.000 opciones y encuentra las que mejor se adaptan a ti.",
+    description: "Nuestro asistente analiza más de 100 opciones y encuentra las que mejor se adaptan a ti.",
     color: "secondary",
   },
   {
@@ -86,13 +86,12 @@ export const HowItWorksSection = () => {
 
                 {/* Icon */}
                 <motion.div
-                  className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 ${
-                    step.color === "primary"
+                  className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 ${step.color === "primary"
                       ? "bg-primary/10 text-primary"
                       : step.color === "secondary"
-                      ? "bg-secondary/10 text-secondary"
-                      : "bg-accent/10 text-accent"
-                  }`}
+                        ? "bg-secondary/10 text-secondary"
+                        : "bg-accent/10 text-accent"
+                    }`}
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >

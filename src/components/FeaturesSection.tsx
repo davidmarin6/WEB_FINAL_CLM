@@ -10,7 +10,7 @@ const features = [
   },
   {
     icon: Castle,
-    title: "+1.000 alojamientos rurales",
+    title: "+100 alojamientos rurales",
     description: "La mayor selección de casas rurales en las 5 provincias de Castilla-La Mancha.",
   },
   {
@@ -76,14 +76,14 @@ export const FeaturesSection = () => {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.1 + index * 0.1 }}
               className="feature-card group cursor-pointer"
-              whileHover={{ 
+              whileHover={{
                 y: -8,
                 transition: { duration: 0.3 }
               }}
             >
               {/* Glow Effect on Hover */}
               <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              
+
               <div className="relative">
                 {/* Icon */}
                 <motion.div

@@ -112,9 +112,9 @@ export const HeroSection = () => {
               transition={{ duration: 0.6, delay: 0.7 }}
             >
               {[
-                { value: "+1.000", label: "Alojamientos" },
-                { value: "24/7", label: "Disponible" },
-                { value: "5★", label: "Valoración" },
+                { value: "102", label: "Alojamientos" },
+                { value: "App Móvil", label: "Disponible" },
+                { value: "24/7", label: "Asistente IA" },
               ].map((stat, index) => (
                 <div key={index} className="text-center">
                   <div className="text-2xl md:text-3xl font-bold text-primary-foreground">
