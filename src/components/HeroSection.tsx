@@ -112,7 +112,7 @@ export const HeroSection = () => {
               transition={{ duration: 0.6, delay: 0.7 }}
             >
               {[
-                { value: "102", label: "Alojamientos" },
+                { value: "+100", label: "Alojamientos" },
                 { value: "App Móvil", label: "Disponible" },
                 { value: "24/7", label: "Asistente IA" },
               ].map((stat, index) => (
