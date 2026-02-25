@@ -5,6 +5,15 @@ import { GoogleMap, Marker, InfoWindow } from "@react-google-maps/api";
 import { createClient } from "@supabase/supabase-js";
 import { useGoogleMaps } from "@/contexts/GoogleMapsContext";
 
+// CSS para evitar scroll en el InfoWindow de Google Maps
+const infoWindowStyles = document.createElement('style');
+infoWindowStyles.textContent = `
+  .gm-style-iw-c { padding: 0 !important; overflow: hidden !important; max-height: none !important; }
+  .gm-style-iw-d { overflow: hidden !important; max-height: none !important; }
+  .gm-style-iw-t::after { display: none; }
+`;
+document.head.appendChild(infoWindowStyles);
+
 // External Supabase client for locations data
 const externalSupabase = createClient(
   "https://gxxawcabaumewbprimrw.supabase.co",
@@ -37,25 +46,55 @@ const InfoWindowContent = ({
   const [photoLoading, setPhotoLoading] = useState(true);
 
   useEffect(() => {
-    if (!location.place_id || !placesService) {
+    if (!placesService) {
       setPhotoLoading(false);
       return;
     }
 
-    placesService.getDetails(
-      {
-        placeId: location.place_id,
-        fields: ["photos"],
-      },
-      (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place?.photos?.[0]) {
-          const url = place.photos[0].getUrl({ maxWidth: 400, maxHeight: 200 });
-          setPhotoUrl(url);
-        }
-        setPhotoLoading(false);
+    const tryGetDetails = () => {
+      if (!location.place_id) {
+        // No place_id, go straight to textSearch
+        tryTextSearch();
+        return;
       }
-    );
-  }, [location.place_id, placesService]);
+
+      placesService.getDetails(
+        {
+          placeId: location.place_id,
+          fields: ["photos"],
+        },
+        (place, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && place?.photos?.[0]) {
+            const url = place.photos[0].getUrl({ maxWidth: 400, maxHeight: 200 });
+            setPhotoUrl(url);
+            setPhotoLoading(false);
+          } else {
+            // Fallback to textSearch
+            tryTextSearch();
+          }
+        }
+      );
+    };
+
+    const tryTextSearch = () => {
+      placesService.textSearch(
+        { query: location.nombre + " Castilla-La Mancha España" },
+        (results, status) => {
+          if (
+            status === google.maps.places.PlacesServiceStatus.OK &&
+            results &&
+            results[0]?.photos?.[0]
+          ) {
+            const url = results[0].photos[0].getUrl({ maxWidth: 400, maxHeight: 200 });
+            setPhotoUrl(url);
+          }
+          setPhotoLoading(false);
+        }
+      );
+    };
+
+    tryGetDetails();
+  }, [location.place_id, location.nombre, placesService]);
 
   return (
     <div style={{ width: '280px', background: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
@@ -491,7 +530,7 @@ export const LocationsMap = ({ isOpen, onClose }: LocationsMapProps) => {
                     <InfoWindow
                       position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
                       onCloseClick={() => setSelectedLocation(null)}
-                      options={{ maxWidth: 260 }}
+                      options={{ maxWidth: 320, disableAutoPan: false }}
                     >
                       <InfoWindowContent location={selectedLocation} placesService={placesService} />
                     </InfoWindow>
