@@ -291,6 +291,7 @@ const LocationCard = ({
 }) => {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(true);
+  const [photoError, setPhotoError] = useState(false);
 
   useEffect(() => {
     if (!placesService) {
@@ -298,20 +299,47 @@ const LocationCard = ({
       return;
     }
 
-    placesService.textSearch(
-      { query: location.nombre + " Castilla-La Mancha España" },
-      (results, status) => {
-        if (
-          status === google.maps.places.PlacesServiceStatus.OK &&
-          results &&
-          results[0]?.photos?.[0]
-        ) {
-          setPhotoUrl(results[0].photos[0].getUrl({ maxWidth: 400, maxHeight: 200 }));
-        }
-        setPhotoLoading(false);
+    const tryGetDetails = () => {
+      if (!location.place_id) {
+        tryTextSearch();
+        return;
       }
-    );
-  }, [location.nombre, placesService]);
+
+      placesService.getDetails(
+        {
+          placeId: location.place_id,
+          fields: ["photos"],
+        },
+        (place, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && place?.photos?.[0]) {
+            const url = place.photos[0].getUrl({ maxWidth: 400, maxHeight: 200 });
+            setPhotoUrl(url);
+            setPhotoLoading(false);
+          } else {
+            tryTextSearch();
+          }
+        }
+      );
+    };
+
+    const tryTextSearch = () => {
+      placesService.textSearch(
+        { query: location.nombre + " Castilla-La Mancha España" },
+        (results, status) => {
+          if (
+            status === google.maps.places.PlacesServiceStatus.OK &&
+            results &&
+            results[0]?.photos?.[0]
+          ) {
+            setPhotoUrl(results[0].photos[0].getUrl({ maxWidth: 400, maxHeight: 200 }));
+          }
+          setPhotoLoading(false);
+        }
+      );
+    };
+
+    tryGetDetails();
+  }, [location.place_id, location.nombre, placesService]);
 
   return (
     <button
@@ -324,11 +352,12 @@ const LocationCard = ({
           <div className="w-full h-full flex items-center justify-center bg-muted animate-pulse">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
-        ) : photoUrl ? (
+        ) : photoUrl && !photoError ? (
           <img
             src={photoUrl}
             alt={location.nombre}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            onError={() => setPhotoError(true)}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
