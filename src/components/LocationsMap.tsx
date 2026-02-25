@@ -58,9 +58,9 @@ const InfoWindowContent = ({
   }, [location.place_id, placesService]);
 
   return (
-    <div style={{ width: '260px', margin: '-8px -8px 0 -8px', overflow: 'visible' }}>
+    <div style={{ width: '280px', background: '#ffffff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.12)', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       {/* Foto de portada con overlay de rating */}
-      <div style={{ position: 'relative', width: '100%', height: '100px', overflow: 'hidden', borderRadius: '8px 8px 0 0' }}>
+      <div style={{ position: 'relative', width: '100%', height: '120px', overflow: 'hidden' }}>
         {photoLoading ? (
           <div style={{
             width: '100%',
@@ -76,7 +76,7 @@ const InfoWindowContent = ({
           <img
             src={photoUrl}
             alt={location.nombre}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         ) : (
           <div style={{
@@ -88,8 +88,8 @@ const InfoWindowContent = ({
             justifyContent: 'center',
             background: 'linear-gradient(135deg, #f97316 0%, #ea580c 50%, #3b82f6 100%)'
           }}>
-            <Building2 style={{ width: '40px', height: '40px', color: 'rgba(255,255,255,0.8)' }} />
-            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '12px', marginTop: '4px', fontWeight: '500' }}>Alojamiento</span>
+            <Building2 style={{ width: '36px', height: '36px', color: 'rgba(255,255,255,0.85)' }} />
+            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '11px', marginTop: '4px', fontWeight: '500' }}>Alojamiento</span>
           </div>
         )}
 
@@ -97,72 +97,77 @@ const InfoWindowContent = ({
         {location.rating && (
           <div style={{
             position: 'absolute',
-            top: '10px',
-            right: '10px',
+            top: '8px',
+            right: '8px',
             background: 'rgba(255,255,255,0.95)',
             backdropFilter: 'blur(8px)',
-            padding: '4px 10px',
+            padding: '3px 8px',
             borderRadius: '20px',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
+            gap: '3px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
           }}>
-            <Star style={{ width: '14px', height: '14px', color: '#eab308', fill: '#eab308' }} />
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1f2937' }}>{location.rating}</span>
+            <Star style={{ width: '13px', height: '13px', color: '#eab308', fill: '#eab308' }} />
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#1f2937' }}>{location.rating}</span>
           </div>
         )}
       </div>
 
       {/* Contenido */}
-      <div style={{ padding: '10px 12px 10px 12px' }}>
+      <div style={{ padding: '12px 14px 14px 14px' }}>
         {/* Nombre */}
         <h3 style={{
           fontSize: '14px',
           fontWeight: 700,
           color: '#1f2937',
-          margin: '0 0 4px 0',
-          lineHeight: '1.2'
+          margin: '0 0 6px 0',
+          lineHeight: '1.3',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap'
         }}>
           {location.nombre}
         </h3>
 
         {/* Dirección con icono */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '4px', marginBottom: '8px' }}>
-          <MapPin style={{ width: '12px', height: '12px', color: '#9ca3af', marginTop: '2px', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '5px', marginBottom: '10px' }}>
+          <MapPin style={{ width: '12px', height: '12px', color: '#f97316', marginTop: '1px', flexShrink: 0 }} />
           <p style={{
             fontSize: '11px',
             color: '#6b7280',
             margin: 0,
-            lineHeight: '1.3',
+            lineHeight: '1.4',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            overflow: 'hidden'
           }}>
             {location.direccion}
           </p>
         </div>
 
         {/* Acciones en fila */}
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           {location.telefono_nacional && (
             <a
               href={`tel:${location.telefono_internacional}`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '3px',
+                gap: '4px',
                 padding: '5px 10px',
                 background: '#f3f4f6',
                 borderRadius: '16px',
-                fontSize: '10px',
+                fontSize: '11px',
                 color: '#374151',
                 textDecoration: 'none',
-                fontWeight: 500
+                fontWeight: 500,
+                border: '1px solid #e5e7eb'
               }}
             >
-              <Phone style={{ width: '10px', height: '10px', color: '#f97316' }} />
+              <Phone style={{ width: '11px', height: '11px', color: '#f97316' }} />
               Llamar
             </a>
           )}
@@ -175,17 +180,18 @@ const InfoWindowContent = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '3px',
+                gap: '4px',
                 padding: '5px 10px',
                 background: '#f3f4f6',
                 borderRadius: '16px',
-                fontSize: '10px',
+                fontSize: '11px',
                 color: '#374151',
                 textDecoration: 'none',
-                fontWeight: 500
+                fontWeight: 500,
+                border: '1px solid #e5e7eb'
               }}
             >
-              <Globe style={{ width: '10px', height: '10px', color: '#3b82f6' }} />
+              <Globe style={{ width: '11px', height: '11px', color: '#3b82f6' }} />
               Web
             </a>
           )}
@@ -198,11 +204,11 @@ const InfoWindowContent = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '3px',
+                gap: '4px',
                 padding: '5px 10px',
                 background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
                 borderRadius: '16px',
-                fontSize: '10px',
+                fontSize: '11px',
                 color: 'white',
                 textDecoration: 'none',
                 fontWeight: 600,
