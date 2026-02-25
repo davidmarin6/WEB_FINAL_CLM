@@ -63,20 +63,28 @@ export const CTASection = () => {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8 }}
         >
-          {/* Counter */}
+          {/* Value badges */}
           <motion.div
             className="mb-8"
             initial={{ scale: 0.8, opacity: 0 }}
             animate={isInView ? { scale: 1, opacity: 1 } : {}}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-primary-foreground/10 backdrop-blur-md rounded-full border border-primary-foreground/20">
-              <span className="text-4xl md:text-5xl font-bold text-primary-foreground counter">
-                {count.toLocaleString()}
-              </span>
-              <span className="text-primary-foreground/80 text-lg">
-                alojamientos disponibles
-              </span>
+            <div className="inline-flex items-center gap-4 md:gap-6 px-6 py-3 bg-primary-foreground/10 backdrop-blur-md rounded-full border border-primary-foreground/20">
+              <div className="text-center">
+                <span className="text-2xl md:text-3xl font-bold text-primary-foreground">5</span>
+                <p className="text-xs text-primary-foreground/70">Provincias</p>
+              </div>
+              <div className="w-px h-8 bg-primary-foreground/20" />
+              <div className="text-center">
+                <span className="text-2xl md:text-3xl font-bold text-primary-foreground">+100</span>
+                <p className="text-xs text-primary-foreground/70">Alojamientos</p>
+              </div>
+              <div className="w-px h-8 bg-primary-foreground/20" />
+              <div className="text-center">
+                <span className="text-2xl md:text-3xl font-bold text-primary-foreground">Web + App</span>
+                <p className="text-xs text-primary-foreground/70">Multiplataforma</p>
+              </div>
             </div>
           </motion.div>
 
@@ -98,7 +106,7 @@ export const CTASection = () => {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            Tu próxima aventura rural está a una conversación de distancia. 
+            Tu próxima aventura rural está a una conversación de distancia.
             Déjate guiar por nuestro asistente inteligente.
           </motion.p>
 
